@@ -56,11 +56,17 @@ This skill must NOT modify:
 - Must be unambiguous and developer-focused
 - Should ideally be valid Python that could recreate the object
 - Format: `ClassName(attr1=value1, attr2=value2)`
+- Use the ranking heuristics in `references/field_ranking_heuristic.md` when selecting which fields to include
+- Consult the reference to distinguish between high-signal and low-signal fields
+- Ensure that large business models produce concise, useful representations (2-5 high-value fields)
 
 **`__str__` requirements:**
 - User-friendly display format
 - Can be less verbose than `__repr__`
 - Should be meaningful to end users
+- Use the ranking heuristics in `references/field_ranking_heuristic.md` when selecting which fields to include
+- Start with the primary display name, add 1-2 short qualifiers
+- Avoid raw IDs unless essential for user identification
 
 ### 2. Dunder Methods That Improve Intuition
 
@@ -301,6 +307,24 @@ If a class already follows these dunder method guidelines, the skill should:
 | `references/dunder_cheatsheet.md` | Quick reference for which dunders to implement, avoid, and how to reason about them. |
 
 **When implementing dunders, open the relevant example file first.**
+
+---
+
+### Field Ranking Reference
+
+This skill uses an additional bundled reference document:
+
+- `references/field_ranking_heuristic.md`
+
+This reference describes the domain-agnostic field ranking rules used when selecting which attributes to include in generated `__repr__` and `__str__` methods.
+
+When deciding which fields to display:
+- Consult the reference file's priority ranking
+- Favor identifiers, human-readable names, and canonical external handles
+- Avoid printing large text fields, noisy metadata, or large collections
+- Prefer short summaries for complex fields
+
+The logic in this skill should defer to that reference whenever choosing or ranking fields for representations.
 
 ---
 
