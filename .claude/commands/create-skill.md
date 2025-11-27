@@ -1,12 +1,10 @@
 ---
 description: Create a new Claude Code skill with proper structure. Use when user wants to scaffold, initialize, or create a new skill.
-argument-hint: [skill-name] [description] [--personal|--project]
-allowed-tools: ["Read", "Write", "Bash", "Glob"]
+argument-hint: "[skill-name] [description] [--personal|--project]"
+allowed-tools: Read, Write, Bash, Glob
 ---
 
-Create a reusable Claude Code skill — a portable capability that will be used in *other* projects, not the current repo.
-
-Do NOT analyze the current repo for how to use the skill's subject matter. Instead, create a generic, reusable skill that could apply to any project needing that capability. The skill should be self-contained and context-independent.
+Create a reusable Claude Code skill — a portable capability that will be used in *other* projects, not the current repo. Do NOT analyze the current repo for how to use the skill's subject matter.
 
 **Inputs:** `$ARGUMENTS` parsed as: SKILL_NAME (kebab-case, max 64 chars), DESCRIPTION (quoted string, max 1024 chars)
 **Flags:** `--personal` (default: ~/.claude/skills/) or `--project` (.claude/skills/)
