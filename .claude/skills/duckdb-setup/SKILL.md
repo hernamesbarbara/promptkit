@@ -114,11 +114,65 @@ CREATE TABLE my_table AS
 SELECT * FROM read_parquet('s3://bucket/path/file.parquet');
 ```
 
-### 6. Project Structure Recommendation
+### 6. Protect Sensitive Data with .gitignore
+
+**CRITICAL:** DuckDB databases can contain sensitive data. Always ensure they are excluded from version control.
+
+When setting up DuckDB in a git repository, **always** add these entries to `.gitignore`:
+
+```gitignore
+# DuckDB
+*.duckdb
+*.duckdb.wal
+db/
+```
+
+**Why this matters:**
+- `.duckdb` files contain all your data—potentially PII, credentials, or proprietary information
+- `.duckdb.wal` (Write-Ahead Log) files contain recent transactions and can expose sensitive data
+- The `db/` directory is a common convention for database storage
+
+**Before creating any database**, check if a `.gitignore` exists and update it:
+
+```python
+from pathlib import Path
+
+def ensure_gitignore_excludes_duckdb(repo_root: Path = None):
+    """Ensure .gitignore excludes DuckDB files."""
+    if repo_root is None:
+        repo_root = Path.cwd()
+
+    gitignore_path = repo_root / ".gitignore"
+
+    duckdb_entries = [
+        "# DuckDB",
+        "*.duckdb",
+        "*.duckdb.wal",
+        "db/",
+    ]
+
+    existing_content = ""
+    if gitignore_path.exists():
+        existing_content = gitignore_path.read_text()
+
+    # Check what's missing
+    missing = [entry for entry in duckdb_entries
+               if entry not in existing_content and not entry.startswith("#")]
+
+    if missing:
+        with open(gitignore_path, "a") as f:
+            if existing_content and not existing_content.endswith("\n"):
+                f.write("\n")
+            f.write("\n".join(duckdb_entries) + "\n")
+        print(f"Updated .gitignore with DuckDB exclusions")
+```
+
+### 7. Project Structure Recommendation
 
 For projects using DuckDB:
 ```
 project/
+├── .gitignore        # Must exclude *.duckdb, *.duckdb.wal, db/
 ├── data/
 │   ├── raw/          # Source data files
 │   └── processed/    # Transformed data

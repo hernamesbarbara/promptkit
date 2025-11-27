@@ -7,9 +7,11 @@ Usage:
     python init_duckdb.py analytics.duckdb --memory-limit 4GB --threads 4
 
 Creates a new DuckDB database with common extensions and configuration.
+Automatically updates .gitignore to protect sensitive database files.
 """
 
 import argparse
+import subprocess
 import sys
 from pathlib import Path
 
@@ -30,6 +32,61 @@ DEFAULT_CONFIG = {
     "enable_progress_bar": "true",
     "enable_object_cache": "true",
 }
+
+DUCKDB_GITIGNORE_ENTRIES = [
+    "# DuckDB",
+    "*.duckdb",
+    "*.duckdb.wal",
+    "db/",
+]
+
+
+def find_git_root(start_path: Path) -> Path | None:
+    """Find the root of the git repository containing start_path."""
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            cwd=start_path if start_path.is_dir() else start_path.parent,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        return Path(result.stdout.strip())
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return None
+
+
+def ensure_gitignore_excludes_duckdb(db_path: Path) -> bool:
+    """
+    Ensure .gitignore excludes DuckDB files if we're in a git repository.
+
+    Returns True if .gitignore was updated, False otherwise.
+    """
+    git_root = find_git_root(db_path.parent if db_path.parent.exists() else Path.cwd())
+
+    if git_root is None:
+        return False
+
+    gitignore_path = git_root / ".gitignore"
+
+    existing_content = ""
+    if gitignore_path.exists():
+        existing_content = gitignore_path.read_text()
+
+    # Check which entries are missing (skip comment line in check)
+    patterns_to_check = ["*.duckdb", "*.duckdb.wal", "db/"]
+    missing = [p for p in patterns_to_check if p not in existing_content]
+
+    if not missing:
+        return False
+
+    # Append DuckDB entries
+    with open(gitignore_path, "a") as f:
+        if existing_content and not existing_content.endswith("\n"):
+            f.write("\n")
+        f.write("\n" + "\n".join(DUCKDB_GITIGNORE_ENTRIES) + "\n")
+
+    return True
 
 
 def init_database(
@@ -88,7 +145,12 @@ def main():
 
     db_path = args.database
     if db_path != ":memory:":
-        path = Path(db_path)
+        path = Path(db_path).resolve()
+
+        # Ensure .gitignore protects DuckDB files before creating the database
+        if ensure_gitignore_excludes_duckdb(path):
+            print("Updated .gitignore to exclude DuckDB files (*.duckdb, *.duckdb.wal, db/)")
+
         if path.exists():
             print(f"Database already exists: {db_path}")
             response = input("Overwrite? [y/N]: ")
