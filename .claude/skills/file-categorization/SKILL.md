@@ -1,10 +1,11 @@
 ---
 name: file-categorization
 description: >
-  Categorize project files into Config, Tests, Docs, Scripts, Source Code, Data, AI Tooling, and Other.
-  Use when: (1) scanning an unfamiliar codebase to understand structure, (2) auditing project organization,
-  (3) detecting misfiled resources, (4) generating file inventories or manifests, (5) preparing for
-  refactoring or dependency analysis, (6) the user asks "what's in this repo" or "where should this file go."
+  Defines the standard 8-category taxonomy for classifying project files: Config, Tests, Docs, Scripts,
+  Source Code, Data, AI Tooling, and Other. REFERENCE THIS SKILL whenever categorizing files, auditing
+  project structure, or answering "what types of files are here." Apply these categories and patterns
+  whether using the bundled script or manual analysis. The skill provides both a methodology (category
+  definitions, pattern rules) and an optional automation script.
 ---
 
 # File Categorization
@@ -21,6 +22,22 @@ description: >
 | **Data** | Data files, datasets, and static assets |
 | **AI Tooling** | AI/ML configs, prompts, and agent definitions |
 | **Other** | Files that don't fit other categories (fallback) |
+
+---
+
+## Category Mapping Rules
+
+**Always use exactly these 8 categories** — do not invent new ones like "Schema", "Database", or
+"Reference Data." Map edge cases as follows:
+
+| File Type | Category | Reasoning |
+|-----------|----------|-----------|
+| SQL DDL (CREATE TABLE) | Docs | Documents database structure |
+| SQL DML (INSERT/SELECT) | Data | Contains or queries data |
+| .duckdb, .sqlite files | Data | Database storage |
+| schema.json, openapi.yaml | Docs | Specification/contract files |
+| Shell scripts (.sh) | Scripts | Executable automation |
+| requirements.txt | Config | Dependency configuration |
 
 ---
 
@@ -51,6 +68,18 @@ When scanning directories, the script uses layered exclusion to prevent wasting 
 
 When reporting results, explain which exclusion path was used:
 > "Excluded 3 directories via Layer 1 (always-exclude), 2 via .gitignore"
+
+---
+
+## Categorization Priority
+
+Apply rules in this order (first match wins):
+
+1. **Directory path**: `tests/` → Tests, `src/` → Source Code, `docs/` → Docs, `references/` → Docs
+2. **Schema/spec files**: `schema.json`, `openapi.yaml` → Docs (see patterns.md for full list)
+3. **Filename pattern**: `test_*.py` → Tests, `*.config.js` → Config
+4. **Extension**: `.sh` → Scripts, `.csv` → Data, `.py` → Source Code
+5. **Content analysis** (if still ambiguous): Check for test assertions, CLI parsing, etc.
 
 ---
 
@@ -203,7 +232,10 @@ Excluded 2 directories: 1 via Layer 1 (always-exclude), 1 via .gitignore
 
 ---
 
-## Script Usage
+## Optional: Automated Script
+
+For large directories or programmatic use, the bundled script implements this methodology with
+automatic directory exclusion (skips node_modules/, venv/, .git/, etc.):
 
 ```bash
 # Basic usage

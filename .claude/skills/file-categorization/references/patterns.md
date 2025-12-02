@@ -106,6 +106,26 @@ Detailed pattern tables for the file-categorization skill.
 
 ---
 
+## Schema & Specification Files
+
+These files describe structure rather than contain data — classify as **Docs**:
+
+| Pattern | Category | Reasoning |
+|---------|----------|-----------|
+| `schema.json`, `*.schema.json` | Docs | Pydantic/JSON Schema definitions |
+| `openapi.json`, `openapi.yaml` | Docs | API specifications |
+| `swagger.json`, `swagger.yaml` | Docs | API specifications |
+| `*.graphql`, `schema.graphql` | Docs | GraphQL schema |
+| `sql/schema.sql`, `**/schema.sql` | Docs | Database DDL |
+| `*.proto` | Docs | Protocol buffer definitions |
+| `tsconfig.json`, `jsconfig.json` | Config | Already handled as config |
+
+**Why Docs, not Data?** Schema files are *documentation of structure*. They tell you what shape data
+takes, but don't contain the data itself. When someone asks "find the schema," they want documentation,
+not a dataset.
+
+---
+
 ## Phase 2: Frontmatter Indicators
 
 ### Config Indicators

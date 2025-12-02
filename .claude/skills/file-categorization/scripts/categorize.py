@@ -289,6 +289,19 @@ DATA_EXTENSIONS = {
 AI_FILES = {"SKILL.md", "CLAUDE.md", ".cursorrules", ".cursorignore"}
 AI_PATTERNS = [r"^\.aider.*", r".*\.prompt(\.md)?$"]
 
+# Schema/specification files → Docs (they document structure, not contain data)
+SCHEMA_FILES = {
+    "schema.json", "openapi.json", "openapi.yaml", "openapi.yml",
+    "swagger.json", "swagger.yaml", "swagger.yml",
+}
+SCHEMA_PATTERNS = [
+    r".*\.schema\.json$",
+    r".*\.schema\.ya?ml$",
+    r"(^|/)schema\.sql$",
+    r".*\.graphql$",
+    r".*\.proto$",
+]
+
 # =============================================================================
 # PHASE 2: Frontmatter Indicators
 # =============================================================================
@@ -452,6 +465,13 @@ def categorize_by_path(filepath: Path) -> Category | None:
     for pattern in AI_PATTERNS:
         if re.match(pattern, name, re.IGNORECASE):
             return "AI Tooling"
+
+    # Schema/specification files → Docs
+    if name in SCHEMA_FILES:
+        return "Docs"
+    for pattern in SCHEMA_PATTERNS:
+        if re.match(pattern, name, re.IGNORECASE):
+            return "Docs"
 
     # Test files
     for pattern in TEST_PATTERNS:
