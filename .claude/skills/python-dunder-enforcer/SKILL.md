@@ -2,10 +2,8 @@
 name: python-dunder-enforcer
 description: >
   Ensure Python classes include appropriate, developer-friendly dunder methods—especially __repr__ and __str__.
-  Use when: (1) Writing or modifying Python class definitions in .py files, (2) Refactoring existing Python classes,
-  (3) Adding or improving __repr__, __str__, or natural arithmetic/comparison/container dunders.
-  Do NOT use for: tests, fixtures, mocks, stubs, non-Python files (YAML, JSON, TOML), auto-generated code,
-  vendor libraries, or when user explicitly asks not to modify dunders.
+  Use when: (1) Writing or modifying Python class definitions in .py files, (2) Refactoring existing Python classes, (3) Adding or improving __repr__, __str__, or natural arithmetic/comparison/container dunders.
+  Do NOT use for: tests, fixtures, mocks, stubs, non-Python files (YAML, JSON, TOML), auto-generated code vendor libraries, or when user explicitly asks not to modify dunders.
   Ignored paths: tests/, *_test.py, test_*.py, .venv/, build/, dist/, migrations/, __init__.py.
 ---
 
