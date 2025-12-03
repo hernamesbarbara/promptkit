@@ -1,5 +1,5 @@
 ---
-name: duckdb-setup
+name: setting-up-duckdb
 description: Set up and configure DuckDB databases. Use when user needs to create databases, configure settings, or initialize DuckDB projects.
 ---
 

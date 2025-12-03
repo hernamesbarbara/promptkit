@@ -1,6 +1,6 @@
 # Example: CLI Tool User Guide
 
-This example demonstrates the docs-writer agent's user guide output.
+This example demonstrates the writing-documentation agent's user guide output.
 
 ---
 

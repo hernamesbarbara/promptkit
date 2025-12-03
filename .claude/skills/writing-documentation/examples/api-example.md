@@ -1,6 +1,6 @@
 # Example: User Management API Documentation
 
-This example demonstrates the docs-writer agent's API documentation output.
+This example demonstrates the writing-documentation agent's API documentation output.
 
 ---
 

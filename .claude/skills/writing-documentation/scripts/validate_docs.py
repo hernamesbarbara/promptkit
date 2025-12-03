@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Documentation validation script for docs-writer skill.
+Documentation validation script for writing-documentation skill.
 
 Checks documentation files for common quality issues:
 - Placeholder text ([TODO], [PLACEHOLDER], etc.)

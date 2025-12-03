@@ -1,5 +1,5 @@
 ---
-name: python-dunder-enforcer
+name: enforcing-python-dunders
 description: >
   Ensure Python classes include appropriate, developer-friendly dunder methods—especially __repr__ and __str__.
   Use when: (1) Writing or modifying Python class definitions in .py files, (2) Refactoring existing Python classes, (3) Adding or improving __repr__, __str__, or natural arithmetic/comparison/container dunders.

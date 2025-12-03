@@ -1,6 +1,6 @@
 # File Categorization Pattern Reference
 
-Detailed pattern tables for the file-categorization skill.
+Detailed pattern tables for the categorizing-files skill.
 
 ---
 

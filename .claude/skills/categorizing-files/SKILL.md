@@ -1,5 +1,5 @@
 ---
-name: file-categorization
+name: categorizing-files
 description: "Defines the standard 8-category taxonomy for classifying project files: Config, Tests, Docs, Scripts, Source Code, Data, AI Tooling, and Other. REFERENCE THIS SKILL whenever categorizing files, auditing project structure, or answering 'what types of files are here.' Apply these categories and patterns whether using the bundled script or manual analysis."
 ---
 
@@ -217,7 +217,7 @@ Docs (2):
   - docs/API.md
 
 AI Tooling (1):
-  - .claude/skills/file-categorization/SKILL.md
+  - .claude/skills/categorizing-files/SKILL.md
 
 Other (1):
   - notes.txt (Low confidence — review needed)

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Code block syntax validator for docs-writer skill.
+Code block syntax validator for writing-documentation skill.
 
 Extracts code blocks from markdown and validates syntax:
 - Python: Uses ast.parse()
