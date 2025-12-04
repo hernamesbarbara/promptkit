@@ -48,6 +48,7 @@ ln -s $(pwd)/promptkit/.claude/skills/* ~/.claude/skills/
 | Command | Description |
 |---------|-------------|
 | `/create-skill` | Scaffold a new Claude Code skill with proper structure (SKILL.md, scripts/, references/, assets/). |
+| `/build-research-doc` | Convert a directory of interlinked Markdown research files into a single DOCX with preserved structure, links, and auto-generated TOC via Pandoc. |
 
 ## Structure
 
@@ -56,7 +57,10 @@ ln -s $(pwd)/promptkit/.claude/skills/* ~/.claude/skills/
 ├── agents/
 │   └── data-profiler.md          # Dataset profiling agent
 ├── commands/
-│   └── create-skill.md           # Skill scaffolding command
+│   ├── create-skill.md           # Skill scaffolding command
+│   ├── build-research-doc.md     # Markdown-to-DOCX converter
+│   └── scripts/
+│       └── build_research_doc.py # Python script for build-research-doc
 └── skills/
     ├── docs-writer/
     │   ├── SKILL.md              # Main skill definition
@@ -114,6 +118,9 @@ Commands are invoked with the slash prefix:
 
 ```
 /create-skill api-client "Generate typed API clients from OpenAPI specs"
+
+/build-research-doc ~/research/my-project
+/build-research-doc ./docs/analysis --output final_report.docx
 ```
 
 ## Installation
