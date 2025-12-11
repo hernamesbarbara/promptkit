@@ -1,5 +1,7 @@
 ---
 description: Break down a spec, PRD, or technical memo into discrete issue files
+argument-hint: <path/to/SPEC_name.md>
+allowed-tools: Read, Write, Glob
 ---
 
 The user wants to break down a document into issues.
@@ -11,25 +13,24 @@ If `$ARGUMENTS` is empty, ask the user to provide a path to the spec, PRD, or te
 ## Setup
 
 1. Read the document at `$ARGUMENTS`.
-2. **Extract the spec name** from the filename:
-   - If filename matches `SPEC_{name}.md`, extract `{name}` (e.g., `SPEC_user-auth.md` → `user-auth`)
-   - If filename doesn't match this pattern, derive a kebab-case name from the filename (e.g., `my-feature-prd.md` → `my-feature-prd`)
-3. Create a `SPEC_{name}/` directory if it doesn't exist.
-4. Check if `.gitignore` exists. If it does, check if `SPEC_*/` pattern is already ignored. If not, add `SPEC_*/` to `.gitignore`.
-5. If `$ARGUMENTS` is not already inside `SPEC_{name}/`, move it there. Use the new path for all subsequent references.
+2. **Determine the project directory** from the spec path:
+   - Expected path format: `{project}/specs/SPEC_{name}.md`
+   - Extract the project directory (e.g., `new-data-pipeline/specs/SPEC_new-data-pipeline.md` → `new-data-pipeline/`)
+   - Extract `{name}` from the filename (e.g., `SPEC_new-data-pipeline.md` → `new-data-pipeline`)
+3. Create the `{project}/issues/` directory if it doesn't exist.
 
 ## Create Issues
 
 Break the work into discrete, independently-completable issues. Each issue should be small enough to finish in one focused coding session.
 
-For each issue, create a file `SPEC_{name}/NNN-short-description.md` with:
+For each issue, create a file `{project}/issues/NNN-short-description.md` with:
 
 ````markdown
 ## Title
 Clear, action-oriented title
 
 ## Source
-This issue is part of the work defined in: `$ARGUMENTS`
+This issue is part of the work defined in: `../specs/SPEC_{name}.md`
 
 ## Description
 What needs to be done and why
@@ -47,18 +48,42 @@ List any issue numbers that must be completed first (or "None")
 
 Keep issues atomic–one logical change per issue. Include specific commands, file paths, or content from the source document needed to complete each issue.
 
-## Create Index
+## Update README
 
-After creating all issues, create `SPEC_{name}/README.md` with:
+After creating all issues, update `{project}/README.md` to add an issues summary:
 
-- Title: "Issues for SPEC_{name}"
-- Reference to the source document (use the final path after any move)
-- List of all issues in recommended execution order
-- Dependencies noted for each issue
+- Add an "## Issues" section if not present
+- List all issues in recommended execution order
+- Note dependencies for each issue
 
-Usage:
+## Output Structure
+
+```
+{project}/
+    ├── issues/
+    │   ├── 001-first-task.md
+    │   ├── 002-second-task.md
+    │   └── ...
+    ├── README.md
+    └── specs/
+        └── SPEC_{name}.md
+```
+
+## Usage
 
 ````bash
-/create-issues SPEC_user-auth.md
-/create-issues docs/SPEC_api-caching.md
+/create-issues new-data-pipeline/specs/SPEC_new-data-pipeline.md
+/create-issues user-auth/specs/SPEC_user-auth.md
 ````
+
+---
+
+## Related Tools
+
+| Type | Name | Purpose |
+|------|------|---------|
+| command | `/create-spec` | Create spec documents (run this first) |
+| command | `/issues` | View status of specs and issues |
+| command | `/fix-issue-status` | Sync checkbox state with README |
+| command | `/fix-issue-relationships` | Fix broken references |
+| agent | `issues-housekeeper` | Validate structure, detect problems |

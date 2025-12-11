@@ -1,10 +1,8 @@
 ---
 description: Create a structured SPEC/PRD document for planning new features
-argument-hint: [name] [one-line-summary OR path/to/draft.md]
-allowed-tools: Read, Write, Bash
+argument-hint: <name> <summary OR path/to/draft.md>
+allowed-tools: Read, Write
 ---
-
-# /create-spec
 
 ## Purpose
 
@@ -22,16 +20,27 @@ Scaffold a structured SPEC or PRD (Product Requirements Document) for planning a
 - **Case A (text summary):** If `$2` does NOT end with `.md` OR the file does not exist → treat as plain text summary (max 256 chars)
 - **Case B (file input):** If `$2` ends with `.md` AND the file exists → read file content as context for spec generation
 
+## Output Structure
+
+When you run `/create-spec {name} ...`, the command creates:
+
+```
+{name}/
+    ├── README.md
+    └── specs/
+        └── SPEC_{name}.md
+```
+
 ## Output Contract
 
 **Case A (text summary):**
-- Success: `Created new spec: SPEC_{name}.md`
-- Already exists: `Spec already exists: SPEC_{name}.md`
+- Success: `Created new spec: {name}/specs/SPEC_{name}.md`
+- Already exists: `Spec already exists: {name}/specs/SPEC_{name}.md`
 - Validation error: `Error: {message}`
 
 **Case B (file input):**
 - Reading: `Reading draft: {filepath}`
-- Success: `Created new spec: SPEC_{name}.md (from {filepath})`
+- Success: `Created new spec: {name}/specs/SPEC_{name}.md (from {filepath})`
 - Validation error: `Error: {message}`
 
 ## Instructions
@@ -49,18 +58,22 @@ Scaffold a structured SPEC or PRD (Product Requirements Document) for planning a
    - Otherwise → **Case A**
 
 4. **Check existence:**
-   - If `SPEC_$1.md` exists in current directory: output `Spec already exists: SPEC_$1.md` and stop
+   - If `$1/specs/SPEC_$1.md` exists: output `Spec already exists: $1/specs/SPEC_$1.md` and stop
 
-5. **Case A (text summary):**
+5. **Create directory structure:**
+   - Create directory `$1/` if it doesn't exist
+   - Create directory `$1/specs/` if it doesn't exist
+
+6. **Case A (text summary):**
    - If `$2` exceeds 256 characters: output `Error: Summary exceeds 256 characters` and stop
    - Generate spec file using the template below, substituting:
      - `{{NAME}}` with `$1`
      - `{{SUMMARY}}` with `$2`
      - `{{DATE}}` with today's date (YYYY-MM-DD)
-   - Write generated content to `SPEC_$1.md`
-   - Output: `Created new spec: SPEC_$1.md`
+   - Write generated content to `$1/specs/SPEC_$1.md`
+   - Output: `Created new spec: $1/specs/SPEC_$1.md`
 
-6. **Case B (file input):**
+7. **Case B (file input):**
    - Output: `Reading draft: $2`
    - Read the contents of the draft file at `$2`
    - Analyze the draft content to understand the feature being described
@@ -70,13 +83,33 @@ Scaffold a structured SPEC or PRD (Product Requirements Document) for planning a
      - `{{DATE}}` with today's date (YYYY-MM-DD)
      - Fill in Overview, Problem Statement, Goals, Proposed Solution, etc. based on what you learn from the draft
      - Do NOT copy-paste the draft verbatim; synthesize and structure the information
-   - Write generated content to `SPEC_$1.md`
+   - Write generated content to `$1/specs/SPEC_$1.md`
    - Delete the original draft file at `$2`
-   - Output: `Created new spec: SPEC_$1.md (from $2)`
+   - Output: `Created new spec: $1/specs/SPEC_$1.md (from $2)`
 
-7. **Next steps:**
+8. **Create README.md:**
+   - Create `$1/README.md` with a brief project overview:
+     ```markdown
+     # {{NAME}}
+
+     > {{SUMMARY}}
+
+     ## Structure
+
+     - `specs/` - Specification documents
+     - `issues/` - Issue breakdowns (created via `/create-issues`)
+
+     ## Getting Started
+
+     Review the spec at `specs/SPEC_{{NAME}}.md`, then run:
+     ```
+     /create-issues $1/specs/SPEC_$1.md
+     ```
+     ```
+
+9. **Next steps:**
    - Tell the user to review and fill in any remaining sections
-   - Remind them they can use `/create-issues SPEC_$1.md` when ready to break down work
+   - Remind them they can use `/create-issues $1/specs/SPEC_$1.md` when ready to break down work
 
 ## Embedded Template
 
@@ -164,7 +197,7 @@ Scaffold a structured SPEC or PRD (Product Requirements Document) for planning a
 
 ---
 
-*When ready to break this into discrete issues, run: `/create-issues SPEC_{{NAME}}.md`*
+*When ready to break this into discrete issues, run: `/create-issues {{NAME}}/specs/SPEC_{{NAME}}.md`*
 ```
 
 ## Examples
@@ -172,17 +205,22 @@ Scaffold a structured SPEC or PRD (Product Requirements Document) for planning a
 ```bash
 # Case A: Basic usage with text summary
 /create-spec user-auth "Add OAuth2 authentication with Google and GitHub providers"
-# Output: Created new spec: SPEC_user-auth.md
+# Creates:
+#   user-auth/
+#       ├── README.md
+#       └── specs/
+#           └── SPEC_user-auth.md
+# Output: Created new spec: user-auth/specs/SPEC_user-auth.md
 
 # Case B: Using an existing draft file
 /create-spec user-auth ./drafts/auth-notes.md
 # Output:
 #   Reading draft: ./drafts/auth-notes.md
-#   Created new spec: SPEC_user-auth.md (from ./drafts/auth-notes.md)
+#   Created new spec: user-auth/specs/SPEC_user-auth.md (from ./drafts/auth-notes.md)
 
 # Spec already exists
 /create-spec user-auth "Different description"
-# Output: Spec already exists: SPEC_user-auth.md
+# Output: Spec already exists: user-auth/specs/SPEC_user-auth.md
 
 # Invalid name
 /create-spec UserAuth "Bad name format"
@@ -194,7 +232,7 @@ Scaffold a structured SPEC or PRD (Product Requirements Document) for planning a
 
 # File path provided but doesn't exist (treated as Case A text)
 /create-spec my-feature ./nonexistent.md
-# Output: Created new spec: SPEC_my-feature.md (uses "./nonexistent.md" as summary text)
+# Output: Created new spec: my-feature/specs/SPEC_my-feature.md (uses "./nonexistent.md" as summary text)
 ```
 
 ## Design Decisions
@@ -213,8 +251,14 @@ In file mode, the original draft is removed after the spec is created. This keep
 ### Filename convention
 Specs are named `SPEC_{name}.md` (uppercase SPEC prefix) to make them visually distinct and easy to glob for. This matches the user's existing convention. Both input modes produce the same naming pattern.
 
-### Created in current directory
-Specs are created in the working directory rather than a dedicated folder. Users can organize as needed (e.g., move to `specs/` or `docs/`).
+### Directory structure
+Each spec gets its own project directory (`{name}/`) with subdirectories for `specs/` and `issues/`. This keeps related artifacts together and makes it easy to work on multiple features simultaneously. The structure is:
+```
+{name}/
+    ├── README.md       # Project overview
+    ├── specs/          # Specification documents
+    └── issues/         # Issue breakdowns (created via /create-issues)
+```
 
 ### Structured for create-issues compatibility
 The template includes:
@@ -229,3 +273,15 @@ The template balances thoroughness with pragmatism:
 - Enough structure to force clear thinking
 - Not so rigid that it feels bureaucratic
 - Sections can be deleted if not relevant
+
+---
+
+## Related Tools
+
+| Type | Name | Purpose |
+|------|------|---------|
+| command | `/create-issues` | Break this spec into issue files |
+| command | `/issues` | View status of specs and issues |
+| command | `/fix-issue-status` | Sync checkbox state with README |
+| command | `/fix-issue-relationships` | Fix broken references |
+| agent | `issues-housekeeper` | Validate structure, detect problems |
