@@ -12,6 +12,45 @@ Validate Claude AI tools against Anthropic's official documentation and best pra
 2. If `$ARGUMENTS` is empty, validate the entire `.claude/` directory
 3. Create output file: `CLAUDE_MEMO_AI_TOOLS_REVIEW.md` in the project root
 
+## Frontmatter Schemas
+
+**IMPORTANT:** Each tool type has different valid frontmatter fields. Use these authoritative schemas.
+
+### Subagents (`.claude/agents/*.md`)
+```yaml
+---
+name: lowercase-with-hyphens        # Required (max 64 chars)
+description: What this agent does   # Required (max 1024 chars)
+tools: Read, Write, Bash            # Optional - tools the agent can use
+model: sonnet | opus | haiku | inherit  # Optional - defaults to inherit
+permissionMode: default | acceptEdits | bypassPermissions | plan | ignore  # Optional
+skills: skill1, skill2              # Optional - skills to auto-load
+---
+```
+
+### Skills (`.claude/skills/*/SKILL.md`)
+```yaml
+---
+name: skill-name                    # Required (max 64 chars)
+description: What and when          # Required (max 1024 chars)
+allowed-tools: ["Read", "Write"]    # Optional - constrain tool access
+---
+```
+
+### Commands (`.claude/commands/*.md`)
+```yaml
+---
+description: What this command does # Required
+argument-hint: <arg1> [arg2]        # Optional
+allowed-tools: Read, Write          # Optional
+model: sonnet | opus | haiku        # Optional - override model for this command
+---
+```
+
+**Key distinction:** Agents use `tools:` field. Skills and commands use `allowed-tools:` field. Do not confuse these.
+
+---
+
 ## Validation Framework
 
 For each tool type, check the applicable rules below.
@@ -52,6 +91,12 @@ For each tool type, check the applicable rules below.
 - [ ] Required field: `name` (lowercase, numbers, hyphens only, max 64 chars)
 - [ ] Required field: `description` (max 1024 chars, no XML tags)
 - [ ] No examples or XML tags in description field (must be in body)
+
+**Field validation (agents use different fields than skills/commands):**
+- [ ] If present, `tools:` field lists valid tool names (NOT `allowed-tools:`)
+- [ ] If `model:` is present, value must be one of: `sonnet`, `opus`, `haiku`, `inherit`
+- [ ] `inherit` is valid and means "use the same model as main conversation"
+- [ ] If `model:` is absent, agent inherits by default (this is valid)
 
 **Best practices:**
 - [ ] Name uses gerund form matching the activity
@@ -98,15 +143,68 @@ For each tool type, check the applicable rules below.
 - [ ] Has usage documentation (docstring or header comment)
 - [ ] Executable permissions if shell script
 
+---
+
+## Cross-Reference Validation
+
+Tools reference each other. Broken references are real bugs this validator must catch.
+
+### Agent → Skill references
+- [ ] If agent has `skills:` field, each skill name exists in `.claude/skills/`
+- [ ] Skill names in frontmatter match actual directory names
+
+### Command → Agent references
+- [ ] If command body mentions "use the X agent" or "invoke X agent", agent X exists in `.claude/agents/`
+- [ ] If command references `/other-command`, that command exists in `.claude/commands/`
+
+### Skill → File references
+- [ ] If SKILL.md references `scripts/foo.py`, that file exists in the skill directory
+- [ ] If SKILL.md references `references/bar.md`, that file exists in the skill directory
+- [ ] If SKILL.md references `templates/baz.md`, that file exists in the skill directory
+
+### Orphan detection
+- [ ] No files in skill `scripts/` subdirectory that aren't referenced by SKILL.md
+- [ ] No files in skill `references/` subdirectory that aren't referenced by SKILL.md
+- [ ] No files in skill `templates/` subdirectory that aren't referenced by SKILL.md
+
+### Related Tools table validation
+- [ ] If tool has "Related Tools" section, verify each referenced tool exists
+- [ ] Check that command names match actual filenames (e.g., `/fix-issue-status` → `fix-issue-status.md`)
+- [ ] Check that agent names match actual filenames (e.g., `issues-housekeeper` → `issues-housekeeper.md`)
+
+---
+
+## Common False Positives to Avoid
+
+**Do NOT flag these as errors:**
+
+| Situation | Why it's valid |
+|-----------|----------------|
+| Agent using `tools:` instead of `allowed-tools:` | Agents correctly use `tools:` field |
+| Agent with `model: inherit` | Valid value meaning "use same model as main conversation" |
+| Skill without `model:` field | Skills don't use model fields |
+| Command without `name:` field | Commands don't require name (description is the key field) |
+| Agent without `allowed-tools:` field | Agents use `tools:`, not `allowed-tools:` |
+| Skill using `allowed-tools:` instead of `tools:` | Skills correctly use `allowed-tools:` field |
+
+**Before flagging a field as incorrect:**
+1. Verify which tool type the file is (agent vs skill vs command) based on file path
+2. Consult the Frontmatter Schemas section above for the correct fields
+3. Only flag if the field is genuinely wrong for that specific tool type
+
+---
+
 ## Analysis Process
 
+0. **Verify schemas**: Before validating any field names, consult the Frontmatter Schemas section above. Do NOT rely on assumptions or patterns from other tools in the codebase. Each tool type has its own valid fields.
 1. **Inventory**: List all tools found in `.claude/`
-2. **Validate**: Run all applicable checks for each tool
-3. **Categorize findings**:
+2. **Classify**: Determine each tool's type based on file path (`.claude/agents/` = agent, `.claude/skills/` = skill, `.claude/commands/` = command)
+3. **Validate**: Run all applicable checks for each tool, using the correct schema for that tool type
+4. **Categorize findings**:
    - **ERRORS**: Broken functionality (missing required fields, invalid syntax, broken links)
    - **WARNINGS**: Functional but non-conforming to best practices
    - **SUGGESTIONS**: Optimization opportunities
-4. **Prioritize**: For each tool, identify top 3 highest-ROI improvements
+5. **Prioritize**: For each tool, identify top 3 highest-ROI improvements
 
 ## Output Format
 
@@ -120,10 +218,26 @@ Provide a brief summary to the user:
 Scanned: X skills, Y agents, Z commands, W other files
 
 ### Errors (must fix)
-- [tool-name]: description of error
 
-### Warnings (should fix)  
-- [tool-name]: description of issue
+| Tool | Issue | Suggested Fix |
+|------|-------|---------------|
+| [tool-name] | [description of error] | [specific fix instruction] |
+
+Example:
+| my-agent | Uses `allowed-tools:` instead of `tools:` | Change line 4: `allowed-tools:` → `tools:` |
+| my-skill | Missing `description` field | Add `description: Brief summary of what this does and when to use it` |
+
+### Warnings (should fix)
+
+| Tool | Issue | Suggested Fix |
+|------|-------|---------------|
+| [tool-name] | [description of issue] | [specific fix instruction] |
+
+### Cross-Reference Issues (if any)
+
+| Source | References | Problem |
+|--------|------------|---------|
+| [tool-name] | [referenced item] | [missing/broken/orphaned] |
 
 ### Top Improvements
 1. [highest impact change]
@@ -195,9 +309,63 @@ Create a detailed markdown file with this structure:
 - [ ] [specific action item]
 ````
 
+## Common Fix Templates
+
+Include these copy-paste ready fixes in the memo when applicable:
+
+### Missing description (for skills/agents)
+```yaml
+description: [What it does]. Use when [trigger conditions/keywords].
+```
+
+### Convert allowed-tools to tools (for agents)
+```diff
+- allowed-tools: Read, Write
++ tools: Read, Write
+```
+
+### Convert tools to allowed-tools (for skills/commands)
+```diff
+- tools: Read, Write
++ allowed-tools: Read, Write
+```
+
+### Add missing Source section (for issues)
+```markdown
+## Source
+This issue is part of the work defined in: `../specs/SPEC_{name}.md`
+```
+
+### Fix model field (invalid value)
+```diff
+- model: gpt-4
++ model: sonnet
+```
+Valid values: `sonnet`, `opus`, `haiku`, `inherit`
+
+### Add argument handling (for commands)
+```markdown
+**Input:** `$ARGUMENTS` — [description of expected input]
+
+If `$ARGUMENTS` is empty, [ask user for input OR use default behavior].
+```
+
+---
+
+## Future Enhancement: Auto-Fix Mode
+
+> **Not yet implemented.** When available, `/validate-claude-tools --fix` will automatically correct:
+> - Field name mismatches (`allowed-tools` ↔ `tools`)
+> - Missing required fields (with templates)
+> - Format inconsistencies (array vs comma-separated)
+> - Broken cross-references (suggest closest match)
+
+---
+
 ## Validation
 
 After creating the memo, confirm:
 1. `CLAUDE_MEMO_AI_TOOLS_REVIEW.md` exists in project root
-2. All errors are clearly actionable
-3. Summary was provided to user
+2. All errors are clearly actionable with specific fix instructions
+3. Summary was provided to user with tabular format
+4. Cross-reference issues are identified and reported
