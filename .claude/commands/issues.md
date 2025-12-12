@@ -8,7 +8,17 @@ Show the current status of specs and issues in a project directory.
 
 **Input:** `$ARGUMENTS` — path to a project directory (e.g., `user-auth/`, `./my-project`)
 
-If `$ARGUMENTS` is empty, ask the user for a path.
+---
+
+## Resolving the Project Path
+
+1. **If `$ARGUMENTS` is provided:** Use it as the project path
+2. **If `$ARGUMENTS` is empty:** Check for session context:
+   - Look for `.claude/session/current-project`
+   - If file exists: read the path from it and use that
+   - If file doesn't exist: ask the user for a path
+
+When using session context, note it in output: `(using active project from /set-project)`
 
 ---
 
@@ -114,6 +124,9 @@ This command **observes and reports**. It's the quick-glance view of project sta
 
 | Type | Name | Purpose |
 |------|------|---------|
+| command | `/set-project` | Set active project (avoids typing path each time) |
+| command | `/show-project` | Display the currently active project |
+| command | `/clear-project` | Unset the active project |
 | command | `/create-spec` | Create a new spec document |
 | command | `/create-issues` | Break a spec into issue files |
 | command | `/fix-issue-status` | Sync checkbox state with README |

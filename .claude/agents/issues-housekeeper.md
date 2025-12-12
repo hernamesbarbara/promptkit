@@ -11,6 +11,20 @@ Your job is to find **structural problems** — not report status. Status report
 
 ---
 
+## Resolving the Project Path
+
+When the user asks you to validate a project:
+
+1. **If a path is provided in the request:** Use that path
+2. **If no path is mentioned:** Check for session context:
+   - Look for `.claude/session/current-project`
+   - If file exists: read the path from it and use that project
+   - If file doesn't exist: ask the user which project to validate
+
+When using session context, note it in output: `(using active project from /set-project)`
+
+---
+
 ## What You Do vs. What /issues Does
 
 | Concern | Who Handles It |
@@ -153,6 +167,9 @@ Then continue with your validation findings.
 
 | Type | Name | Purpose |
 |------|------|---------|
+| command | `/set-project` | Set active project (avoids typing path each time) |
+| command | `/show-project` | Display the currently active project |
+| command | `/clear-project` | Unset the active project |
 | command | `/issues` | **Status summary** — completion counts, progress, next actions |
 | command | `/create-spec` | Create new spec documents |
 | command | `/create-issues` | Break specs into issue files |

@@ -22,9 +22,21 @@ Typical workflow:
 
 | Argument | Format | Required |
 |----------|--------|----------|
-| `$ARGUMENTS` | Project path | Yes |
+| `$ARGUMENTS` | Project path | No (uses session context if set) |
 
 Example: `/fix-issue-status user-auth/` or `/fix-issue-status cybercreds-data/audit-firm-extraction/`
+
+---
+
+## Resolving the Project Path
+
+1. **If `$ARGUMENTS` is provided:** Use it as the project path
+2. **If `$ARGUMENTS` is empty:** Check for session context:
+   - Look for `.claude/session/current-project`
+   - If file exists: read the path from it and use that
+   - If file doesn't exist: output `Error: Project path required. Usage: /fix-issue-status {project-path}` or use `/set-project` first
+
+When using session context, note it in output: `(using active project from /set-project)`
 
 ## Expected Structure
 
@@ -298,6 +310,9 @@ This command **synchronizes status markers**. It assumes the README reflects rea
 
 | Type | Name | Purpose |
 |------|------|---------|
+| command | `/set-project` | Set active project (avoids typing path each time) |
+| command | `/show-project` | Display the currently active project |
+| command | `/clear-project` | Unset the active project |
 | command | `/issues` | Status summary — see current completion state |
 | command | `/create-spec` | Create new spec documents |
 | command | `/create-issues` | Break specs into issue files |

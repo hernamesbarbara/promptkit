@@ -43,13 +43,18 @@ Designed to run **after** `issues-housekeeper` identifies relationship problems,
 |----------|------|---------|
 | `$ARGUMENTS` = project directory | **Project mode** | `/fix-issue-relationships user-auth/` |
 | `$ARGUMENTS` = issue file path | **Single file mode** | `/fix-issue-relationships user-auth/issues/003-task.md` |
-| `$ARGUMENTS` = empty | **Error** | Prompt user for path |
+| `$ARGUMENTS` = empty | **Session context** | Uses active project from `/set-project` |
 
 ### Detection Logic
 
 - If `$ARGUMENTS` ends with `.md` → **Single file mode**
 - If `$ARGUMENTS` is a directory (or ends with `/`) → **Project mode**
-- If `$ARGUMENTS` is empty → Error: `Usage: /fix-issue-relationships {project-path OR issue-file}`
+- If `$ARGUMENTS` is empty → **Check for session context:**
+  - Look for `.claude/session/current-project`
+  - If file exists: read the path and use **Project mode** with that path
+  - If file doesn't exist: Error: `Usage: /fix-issue-relationships {project-path OR issue-file}` or use `/set-project` first
+
+When using session context, note it in output: `(using active project from /set-project)`
 
 ---
 
@@ -460,6 +465,9 @@ This command **repairs the relationship graph**. It ensures every issue knows it
 
 | Type | Name | Purpose |
 |------|------|---------|
+| command | `/set-project` | Set active project (avoids typing path each time) |
+| command | `/show-project` | Display the currently active project |
+| command | `/clear-project` | Unset the active project |
 | command | `/issues` | Status summary — see current completion state |
 | command | `/create-spec` | Create new spec documents |
 | command | `/create-issues` | Break specs into issue files |
