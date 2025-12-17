@@ -1,0 +1,25 @@
+{
+  "description": "Good PM hook configuration. Merged into .claude/settings.local.json by /good-pm:setup",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f .claude/hooks/good-pm-context.sh ] && bash .claude/hooks/good-pm-context.sh || true"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f .claude/hooks/good-pm-session-update.py ] && python3 .claude/hooks/good-pm-session-update.py || echo '{\"decision\":\"approve\"}'"
+          }
+        ]
+      }
+    ]
+  }
+}

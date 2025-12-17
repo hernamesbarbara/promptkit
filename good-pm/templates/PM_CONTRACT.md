@@ -1,0 +1,268 @@
+# Good PM Contract
+
+> This document defines the vocabulary, conventions, and rules for filesystem-based project management. It is auto-injected into conversations via hook.
+
+---
+
+## Status Values
+
+Status is **derived from checkbox state** in each file. Never set status manually.
+
+| Status | Definition | Checkbox State |
+|--------|------------|----------------|
+| **Open** | No work started | 0 of N checked |
+| **In Progress** | Work underway | 1+ of N checked (not all) |
+| **Complete** | All tasks done | N of N checked |
+
+### Status Transitions
+
+```
+Open ──────► In Progress ──────► Complete
+(0/N)         (1+/N)              (N/N)
+```
+
+- Check a box → status may change to "In Progress"
+- Check final box → status becomes "Complete"
+- Uncheck a box → status may revert
+
+---
+
+## Checkbox Syntax
+
+Use standard GitHub-flavored markdown checkboxes:
+
+```markdown
+- [ ] Unchecked task (counts as incomplete)
+- [x] Checked task (counts as complete)
+- [X] Also valid checked syntax
+```
+
+**Parsing rules:**
+- Only `- [ ]` and `- [x]`/`- [X]` at line start are counted
+- Nested checkboxes count equally
+- Code blocks are ignored
+- Checkboxes in comments are ignored
+
+---
+
+## Naming Conventions
+
+### Specs
+
+- **Pattern:** `SPEC_<name>.md`
+- **Location:** `.good-pm/specs/`
+- **Name format:** kebab-case, lowercase, a-z 0-9 hyphens only
+- **Max length:** 64 characters
+
+**Examples:**
+- `SPEC_user-authentication.md`
+- `SPEC_api-v2-migration.md`
+- `SPEC_bugfix-login-timeout.md`
+
+### Issues
+
+- **Pattern:** `NNN-<description>.md`
+- **Location:** `.good-pm/issues/`
+- **NNN:** Zero-padded 3-digit number (001, 002, ... 999)
+- **Description:** kebab-case, derived from title
+
+**Examples:**
+- `001-setup-database-schema.md`
+- `042-implement-oauth-flow.md`
+- `100-write-api-documentation.md`
+
+---
+
+## Directory Structure
+
+```
+.good-pm/
+├── context/
+│   ├── PM_CONTRACT.md          # This file (auto-injected)
+│   └── session-update.md       # Stop hook instructions
+├── session/
+│   └── current.md              # Ephemeral work state (auto-injected if has content)
+├── specs/
+│   └── SPEC_<name>.md          # Specification documents
+├── issues/
+│   └── NNN-<description>.md    # Issue files
+├── templates/
+│   ├── SPEC_TEMPLATE.md        # Template for new specs
+│   ├── ISSUE_TEMPLATE.md       # Template for new issues
+│   └── SESSION_TEMPLATE.md     # Template for session context
+└── INDEX.md                    # Navigation and quick links
+```
+
+---
+
+## Frontmatter Fields
+
+### Specs
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| title | string | Yes | Human-readable spec title |
+| status | enum | Derived | Open, In Progress, Complete |
+| created | date | Yes | YYYY-MM-DD format |
+| updated | date | Yes | YYYY-MM-DD format |
+
+### Issues
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| title | string | Yes | Action-oriented title |
+| source | path | Yes | Relative path to parent spec |
+| status | enum | Derived | Open, In Progress, Complete |
+| dependencies | list | No | Issue numbers or "None" |
+
+---
+
+## Relationships
+
+### Spec → Issues
+
+Specs are broken down into issues via `/good-pm:create-issues`. Each issue's `Source` section links back to its parent spec.
+
+### Issue → Spec
+
+Every issue should have a `## Source` section containing:
+
+```markdown
+## Source
+This issue is part of the work defined in: `../specs/SPEC_<name>.md`
+```
+
+### Unlinked Issues
+
+Issues without a valid Source section are "unlinked" and reported separately in status views.
+
+---
+
+## Commands Reference
+
+| Command | Purpose |
+|---------|---------|
+| `/good-pm:setup` | Initialize Good PM in a project |
+| `/good-pm:create-spec` | Generate a spec from summary or draft |
+| `/good-pm:create-issues` | Break a spec into numbered issues |
+| `/good-pm:issues` | Display status summary |
+
+---
+
+## Session Context
+
+The session context file (`.good-pm/session/current.md`) tracks ephemeral work state between conversations.
+
+### Four Sections
+
+| Section | Purpose |
+|---------|---------|
+| **Active Spec** | Currently focused specification |
+| **In Progress Issues** | Issues being actively worked on |
+| **Blockers** | Obstacles preventing completion |
+| **Notes for Next Session** | Context needed to resume work |
+
+### Injection Behavior
+
+- Session context is auto-injected on `UserPromptSubmit` (after PM_CONTRACT.md)
+- Only injected if file contains meaningful content (not just placeholders)
+- Updated via the Stop hook before conversation ends
+
+### Updating Session Context
+
+The Stop hook prompts for session context review before ending conversations. Apply the Future Self test to determine what to include.
+
+---
+
+## Selective Context Loading
+
+Context injection is **conditional** to preserve token budget and reduce noise in non-PM work.
+
+### When Context Is Injected
+
+| Condition | Context Injected |
+|-----------|------------------|
+| `.good-pm/` directory exists | Yes - full PM context |
+| No `.good-pm/` directory | No - silent exit |
+
+### Loading Decision Matrix
+
+| Scenario | What Loads |
+|----------|------------|
+| Non-PM directory | Nothing (hook exits silently) |
+| PM project, new conversation | PM_CONTRACT.md |
+| PM project, session has content | PM_CONTRACT.md + session context |
+| PM project, running PM command | Full context available |
+
+### Why Selective Loading Matters
+
+- **Token efficiency:** PM context is ~200 lines; unnecessary for non-PM tasks
+- **Noise reduction:** Unrelated context can confuse or distract
+- **Project isolation:** Each project's PM state stays separate
+
+### How It Works
+
+The `good-pm-context.sh` hook checks for `.good-pm/` directory at the start:
+
+```bash
+if [ ! -d ".good-pm" ]; then
+  exit 0  # Not a PM project, inject nothing
+fi
+```
+
+This means:
+- **PM commands still work** — they run in the project directory where `.good-pm/` exists
+- **Non-PM work is unaffected** — no PM context clutters the conversation
+- **Subdirectories inherit** — running from `src/` in a PM project still gets context (if `.good-pm/` is in cwd)
+
+---
+
+## Progress Calculation
+
+**Issue progress:** `checked_boxes / total_boxes`
+
+**Spec progress:** Aggregated from linked issues:
+- Sum of all checked boxes across linked issues
+- Divided by sum of all total boxes across linked issues
+
+---
+
+## The Future Self Test
+
+When updating session context, apply this filter:
+
+**"If I started a new conversation tomorrow, would this information change how I respond?"**
+
+| Answer | Action |
+|--------|--------|
+| **YES** | Save it to session context |
+| **NO** | Don't save it |
+
+### Examples That PASS (Save These)
+
+| Information | Why It Passes |
+|-------------|---------------|
+| "Waiting on API key from client" | Blocker that affects what work can continue |
+| "User prefers functional style over classes" | Changes implementation approach |
+| "Issue 005 depends on external PR #123" | External dependency not visible in checkboxes |
+| "Decided to use Redis over Memcached for X reason" | Decision context for future questions |
+
+### Examples That FAIL (Don't Save)
+
+| Information | Why It Fails |
+|-------------|--------------|
+| "Completed issue 003" | Checkbox state already captures this |
+| "Fixed the login bug" | Git history shows this |
+| "Looked up OAuth2 spec" | Session-specific research |
+| "Files changed: auth.ts, config.ts" | `git diff` shows this |
+
+### Anti-Patterns to Avoid
+
+- **Task completion logs** — That's what checkboxes are for
+- **Session-specific research** — Store in project docs if reusable
+- **Git-recoverable information** — Commits capture this
+- **Transient debugging notes** — Resolved issues don't need memory
+
+---
+
+*This contract is the source of truth for Good PM terminology and behavior.*

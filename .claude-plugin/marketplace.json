@@ -1,0 +1,13 @@
+{
+  "name": "promptkit",
+  "owner": {
+    "name": "austin"
+  },
+  "plugins": [
+    {
+      "name": "good-pm",
+      "source": "./good-pm",
+      "description": "A project management plugin to manage product specs, feature development, and bug fixes in your projects."
+    }
+  ]
+}
